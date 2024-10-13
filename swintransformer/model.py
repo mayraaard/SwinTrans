@@ -17,8 +17,8 @@ class Mlp(tf.keras.layers.Layer):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = Dense(hidden_features, name=f'{prefix}/mlp/fc1')
-        self.fc2 = Dense(out_features, name=f'{prefix}/mlp/fc2')
+        self.fc1 = Dense(hidden_features, name=f'{prefix}_mlp_fc1')
+        self.fc2 = Dense(out_features, name=f'{prefix}_mlp_fc2')
         self.drop = Dropout(drop)
 
     def call(self, x):
@@ -58,13 +58,13 @@ class WindowAttention(tf.keras.layers.Layer):
         self.prefix = prefix
 
         self.qkv = Dense(dim * 3, use_bias=qkv_bias,
-                         name=f'{self.prefix}/attn/qkv')
+                         name=f'{self.prefix}_attn_qkv')
         self.attn_drop = Dropout(attn_drop)
-        self.proj = Dense(dim, name=f'{self.prefix}/attn/proj')
+        self.proj = Dense(dim, name=f'{self.prefix}_attn_proj')
         self.proj_drop = Dropout(proj_drop)
 
     def build(self, input_shape):
-        self.relative_position_bias_table = self.add_weight(f'{self.prefix}/attn/relative_position_bias_table',
+        self.relative_position_bias_table = self.add_weight(f'{self.prefix}/attn/relative_position_bias_table'.replace('/', '_'),
                                                             shape=(
                                                                 (2 * self.window_size[0] - 1) * (2 * self.window_size[1] - 1), self.num_heads),
                                                             initializer=tf.initializers.Zeros(), trainable=True)
@@ -81,7 +81,7 @@ class WindowAttention(tf.keras.layers.Layer):
         relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
         relative_position_index = relative_coords.sum(-1).astype(np.int64)
         self.relative_position_index = tf.Variable(initial_value=tf.convert_to_tensor(
-            relative_position_index), trainable=False, name=f'{self.prefix}/attn/relative_position_index')
+            relative_position_index), trainable=False, name=f'{self.prefix}/attn/relative_position_index'.replace('/', '_'))
         self.built = True
 
     def call(self, x, mask=None):
@@ -160,12 +160,12 @@ class SwinTransformerBlock(tf.keras.layers.Layer):
         assert 0 <= self.shift_size < self.window_size, "shift_size must in 0-window_size"
         self.prefix = prefix
 
-        self.norm1 = norm_layer(epsilon=1e-5, name=f'{self.prefix}/norm1')
+        self.norm1 = norm_layer(epsilon=1e-5, name=f'{self.prefix}_norm1')
         self.attn = WindowAttention(dim, window_size=(self.window_size, self.window_size), num_heads=num_heads,
                                     qkv_bias=qkv_bias, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop, prefix=self.prefix)
         self.drop_path = DropPath(
             drop_path_prob if drop_path_prob > 0. else 0.)
-        self.norm2 = norm_layer(epsilon=1e-5, name=f'{self.prefix}/norm2')
+        self.norm2 = norm_layer(epsilon=1e-5, name=f'{self.prefix}_norm2')
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim,
                        drop=drop, prefix=self.prefix)
@@ -251,8 +251,8 @@ class PatchMerging(tf.keras.layers.Layer):
         self.input_resolution = input_resolution
         self.dim = dim
         self.reduction = Dense(2 * dim, use_bias=False,
-                               name=f'{prefix}/downsample/reduction')
-        self.norm = norm_layer(epsilon=1e-5, name=f'{prefix}/downsample/norm')
+                               name=f'{prefix}_downsample_reduction')
+        self.norm = norm_layer(epsilon=1e-5, name=f'{prefix}_downsample_norm')
 
     def call(self, x):
         H, W = self.input_resolution
@@ -296,7 +296,7 @@ class BasicLayer(tf.keras.layers.Layer):
                                            drop_path_prob=drop_path_prob[i] if isinstance(
                                                drop_path_prob, list) else drop_path_prob,
                                            norm_layer=norm_layer,
-                                           prefix=f'{prefix}/blocks{i}') for i in range(depth)])
+                                           prefix=f'{prefix}_blocks{i}') for i in range(depth)])
         if downsample is not None:
             self.downsample = downsample(
                 input_resolution, dim=dim, norm_layer=norm_layer, prefix=prefix)
