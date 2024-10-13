@@ -195,7 +195,7 @@ class SwinTransformerBlock(tf.keras.layers.Layer):
             attn_mask = tf.where(attn_mask != 0, -100.0, attn_mask)
             attn_mask = tf.where(attn_mask == 0, 0.0, attn_mask)
             self.attn_mask = tf.Variable(
-                initial_value=attn_mask, trainable=False, name=f'{self.prefix}/attn_mask')
+                initial_value=attn_mask, trainable=False, name=f'{self.prefix}_attn_mask')
         else:
             self.attn_mask = None
 
