@@ -64,7 +64,7 @@ class WindowAttention(tf.keras.layers.Layer):
         self.proj_drop = Dropout(proj_drop)
 
     def build(self, input_shape):
-        self.relative_position_bias_table = self.add_weight(f'{self.prefix}/attn/relative_position_bias_table'.replace('/', '_'),
+        self.relative_position_bias_table = self.add_weight(f'{self.prefix}_attn_relative_position_bias_table',
                                                             shape=(
                                                                 (2 * self.window_size[0] - 1) * (2 * self.window_size[1] - 1), self.num_heads),
                                                             initializer=tf.initializers.Zeros(), trainable=True)
